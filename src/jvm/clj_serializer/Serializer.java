@@ -20,6 +20,8 @@ import clojure.lang.ArraySeq;
 import clojure.lang.Keyword;
 import clojure.lang.RT;
 
+import org.joda.time.DateTime;
+
 public class Serializer {
   private static final byte KEYWORD_TYPE =     0;
   private static final byte STRING_TYPE =      1;
@@ -37,6 +39,8 @@ public class Serializer {
   private static final byte SET_TYPE =         13;
   private static final byte FLOAT_TYPE =       14;
 
+  private static final byte DATETIME_TYPE =    99;
+
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   public static void serialize(DataOutput dos, Object obj) throws IOException {
@@ -47,7 +51,7 @@ public class Serializer {
       dos.writeByte(KEYWORD_TYPE);
       dos.writeInt(byteSize);
       dos.write(bytes, 0, byteSize);
-    
+
     } else if (obj instanceof String) {
       String str = (String) obj;
       byte[] bytes = str.getBytes(UTF_8);
@@ -85,7 +89,7 @@ public class Serializer {
 
     } else if (obj == null) {
       dos.writeByte(NIL_TYPE);
-      
+
     } else if (obj instanceof IPersistentMap) {
       IPersistentMap map = (IPersistentMap) obj;
       ISeq mSeq = map.seq();
@@ -128,6 +132,9 @@ public class Serializer {
         serialize(dos, seq.first());
         seq = seq.next();
       }
+    } else if (obj instanceof DateTime) {
+      dos.writeByte(DATETIME_TYPE);
+      dos.writeLong(((DateTime)obj).getMillis());
     } else {
       throw new IOException("Cannot serialize " + obj);
     }
@@ -136,7 +143,7 @@ public class Serializer {
   public static Object deserialize(DataInput dis, Object eofValue) throws IOException {
     try {
       byte typeByte = dis.readByte();
-      switch (typeByte) {  
+      switch (typeByte) {
         case KEYWORD_TYPE:
           int keyByteSize = dis.readInt();
           byte[] keyBytes = new byte[keyByteSize];
@@ -154,7 +161,7 @@ public class Serializer {
 
         case LONG_TYPE:
           return dis.readLong();
-        
+
         case BIG_INTEGER_TYPE:
           int byteSize = dis.readInt();
           byte[] bytes = new byte[byteSize];
@@ -208,6 +215,10 @@ public class Serializer {
             }
             return ArraySeq.create(lObjs);
           }
+
+        case DATETIME_TYPE:
+          long millis = dis.readLong();
+          return new DateTime(millis);
 
         default:
           throw new IOException("Cannot deserialize " + typeByte);

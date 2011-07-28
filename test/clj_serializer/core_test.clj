@@ -2,7 +2,8 @@
   (:use clojure.test
         clj-serializer.core)
    (:import (java.io DataOutputStream ByteArrayOutputStream
-                     DataInputStream  ByteArrayInputStream)))
+                     DataInputStream  ByteArrayInputStream)
+            (org.joda.time DateTime)))
 
 (def record
   {:keyword :foo
@@ -18,6 +19,7 @@
    :vector ["a" "b" "c"]
    :set #{"a" "b" "c"}
    :emptylist '()
+   :datetime (DateTime. (long 123456789))
    :list '(1 2 3)})
 
 (deftest test-roundtrip
