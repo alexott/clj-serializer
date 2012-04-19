@@ -19,6 +19,7 @@ import clojure.lang.Seqable;
 import clojure.lang.ArraySeq;
 import clojure.lang.Keyword;
 import clojure.lang.RT;
+import clojure.lang.BigInt;
 
 public class Serializer {
   private static final byte KEYWORD_TYPE =     0;
@@ -36,6 +37,7 @@ public class Serializer {
   private static final byte LIST_TYPE =        12;
   private static final byte SET_TYPE =         13;
   private static final byte FLOAT_TYPE =       14;
+	private static final byte CLJ_BIG_INTEGER_TYPE = 15;
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
@@ -71,6 +73,13 @@ public class Serializer {
       dos.writeInt(byteSize);
       dos.write(bytes, 0, byteSize);
 
+    } else if (obj instanceof BigInt) {
+				byte[] bytes = ((BigInt) obj).toBigInteger().toByteArray();
+				int byteSize = bytes.length;
+				dos.writeByte(CLJ_BIG_INTEGER_TYPE);
+				dos.writeInt(byteSize);
+				dos.write(bytes, 0, byteSize);
+				
     } else if (obj instanceof Float) {
       dos.writeByte(FLOAT_TYPE);
       dos.writeFloat((Float) obj);
@@ -129,6 +138,13 @@ public class Serializer {
         seq = seq.next();
       }
     } else {
+		if(obj != null) {
+			Class cls = obj.getClass();
+			if (cls != null) 
+				System.out.println("type is " + cls.getName());
+			else
+				System.out.println("type is unknown...");
+		}
       throw new IOException("Cannot serialize " + obj);
     }
   }
@@ -155,12 +171,23 @@ public class Serializer {
         case LONG_TYPE:
           return dis.readLong();
         
-        case BIG_INTEGER_TYPE:
+			  case BIG_INTEGER_TYPE: 
+			  {
           int byteSize = dis.readInt();
           byte[] bytes = new byte[byteSize];
           dis.readFully(bytes, 0, byteSize);
           return new BigInteger(bytes);
-
+			  }
+			
+			  case CLJ_BIG_INTEGER_TYPE: 
+			  {
+          int byteSize = dis.readInt();
+          byte[] bytes = new byte[byteSize];
+          dis.readFully(bytes, 0, byteSize);
+					BigInteger bint = new BigInteger(bytes);
+					return BigInt.fromBigInteger(bint);
+			  }
+			
         case FLOAT_TYPE:
           return dis.readFloat();
 
