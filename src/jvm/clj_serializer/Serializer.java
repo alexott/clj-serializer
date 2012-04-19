@@ -138,13 +138,6 @@ public class Serializer {
         seq = seq.next();
       }
     } else {
-		if(obj != null) {
-			Class cls = obj.getClass();
-			if (cls != null) 
-				System.out.println("type is " + cls.getName());
-			else
-				System.out.println("type is unknown...");
-		}
       throw new IOException("Cannot serialize " + obj);
     }
   }
